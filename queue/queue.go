@@ -6,61 +6,46 @@ import (
 )
 
 type node struct {
-	next     *node
-	previous *node
-	content  func()
+	content func()
 }
 
 type Queue struct {
-	head         *node
-	tail         *node
-	maxTasks     int
+	list         []*node
+	MaxTasks     int
 	runningTasks int
 }
 
-func (q *Queue) Push(wg *sync.WaitGroup, PromiseFactory func(*sync.WaitGroup) ){
-	fmt.Println("Pushing")
+func (q *Queue) Push(wg *sync.WaitGroup, PromiseFactory func(*sync.WaitGroup)) {
+
 	task := func() {
-		fmt.Println("Executing")
-		q.runningTasks++
 		wg.Add(1)
-		go PromiseFactory(wg)
-		defer func() {
-			q.runningTasks--
-			q.tryToExecute(wg)
+		q.runningTasks++
+		go func() {
+			PromiseFactory(wg)
+			defer func() {
+				q.runningTasks--
+				q.tryToExecute()
+			}()
 		}()
+
 	}
 	n := &node{}
-	if q.head == nil {
-		q.head = n
-		q.tail = n
-	} else {
-		q.tail.next = n
-		n.previous = q.tail
-		q.tail = n
-	}
-	if q.runningTasks < 2 {
+	if q.runningTasks < q.MaxTasks {
 		task()
 	} else {
-		q.head.content = task
+		n.content = task
+		q.list = append(q.list, n)
 	}
+
 }
 
-func (q *Queue) Pop() func() {
-	if q.head == nil {
-		return nil
-	} else {
-		n := q.head
-		q.head = q.head.next
-		return n.content
-	}
-}
-
-func (q *Queue) tryToExecute(wg *sync.WaitGroup) {
-	if q.runningTasks >= 2 && q.head == nil {
+func (q *Queue) tryToExecute() {
+	if q.runningTasks >= q.MaxTasks || len(q.list) == 0 {
 		fmt.Println("Queue is empty")
-		return 
+		return
 	}
-	q.Pop()
+	fmt.Println("Trying to execute")
+	q.list[0].content()
+	q.list = q.list[1:]
 
 }
