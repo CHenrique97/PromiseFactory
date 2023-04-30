@@ -15,7 +15,7 @@ type Queue struct {
 	runningTasks int
 }
 
-func (q *Queue) Push(wg *sync.WaitGroup, PromiseFactory func(*sync.WaitGroup)) {
+func (q *Queue) Push(wg *sync.WaitGroup, chris chan bool, PromiseFactory func(*sync.WaitGroup)) {
 
 	task := func() {
 		wg.Add(1)
@@ -25,6 +25,8 @@ func (q *Queue) Push(wg *sync.WaitGroup, PromiseFactory func(*sync.WaitGroup)) {
 			defer func() {
 				q.runningTasks--
 				q.tryToExecute()
+				chris <- true
+
 			}()
 		}()
 
@@ -36,7 +38,7 @@ func (q *Queue) Push(wg *sync.WaitGroup, PromiseFactory func(*sync.WaitGroup)) {
 		n.content = task
 		q.list = append(q.list, n)
 	}
-
+	wg.Done()
 }
 
 func (q *Queue) tryToExecute() {

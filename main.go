@@ -10,7 +10,7 @@ import (
 )
 
 func awaitingFunction(wg *sync.WaitGroup) {
-	randomTime := rand.Intn(1,10)
+	randomTime := rand.Intn(1)+1
 	fmt.Println("Sleeping for", randomTime, "seconds")
 	time.Sleep(time.Duration(randomTime) * time.Second)
 	fmt.Println("Done sleeping")
@@ -18,11 +18,17 @@ func awaitingFunction(wg *sync.WaitGroup) {
 }
 
 func main() {
-	queueOfPromises:= queue.Queue{MaxTasks: 1}
-
+	queueOfPromises:= queue.Queue{MaxTasks: 2}
+   chris := make(chan bool)
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
-		queueOfPromises.Push(&wg, awaitingFunction)
+		wg.Add(1)
+		go func (){
+		queueOfPromises.Push(&wg, chris, awaitingFunction)
+		<-chris
+		fmt.Println("Promise completed")
+		}()
+		
 	}
 	wg.Wait()
 }
