@@ -26,7 +26,6 @@ func (q *Queue) Push(wg *sync.WaitGroup, chris chan bool, PromiseFactory func(*s
 				q.runningTasks--
 				q.tryToExecute()
 				chris <- true
-
 			}()
 		}()
 
@@ -38,7 +37,7 @@ func (q *Queue) Push(wg *sync.WaitGroup, chris chan bool, PromiseFactory func(*s
 		n.content = task
 		q.list = append(q.list, n)
 	}
-	wg.Done()
+
 }
 
 func (q *Queue) tryToExecute() {
@@ -47,7 +46,8 @@ func (q *Queue) tryToExecute() {
 		return
 	}
 	fmt.Println("Trying to execute")
-	q.list[0].content()
+	n := q.list[0]
+	n.content()
 	q.list = q.list[1:]
 
 }
